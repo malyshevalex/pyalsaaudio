@@ -483,12 +483,52 @@ alsapcm_pcmmode(alsapcm_t *self, PyObject *args)
 }
 
 PyDoc_STRVAR(pcmmode_doc,
-"pcmmode() -> int\n\
+"pcmmode() -> long\n\
 \n\
 Returns the mode of the PCM object. One of:\n\
  - PCM_NONBLOCK\n\
  - PCM_ASYNC\n\
  - PCM_NORMAL.");
+
+
+static PyObject *
+alsapcm_getchannels(alsapcm_t *self, PyObject *args) 
+{
+    if (!PyArg_ParseTuple(args,":get_channels")) 
+        return NULL;
+
+    if (!self->handle) {
+        PyErr_SetString(ALSAAudioError, "PCM device is closed");
+        return NULL;
+    }
+
+    return PyLong_FromLong(self->channels);
+}
+
+PyDoc_STRVAR(getchannels_doc,
+"get_channels() -> long\n\
+\n\
+Returns the channels used by the PCM object.");
+
+
+static PyObject *
+alsapcm_getrate(alsapcm_t *self, PyObject *args) 
+{
+    if (!PyArg_ParseTuple(args,":get_rate")) 
+        return NULL;
+
+    if (!self->handle) {
+        PyErr_SetString(ALSAAudioError, "PCM device is closed");
+        return NULL;
+    }
+
+    return PyLong_FromLong(self->rate);
+}
+
+PyDoc_STRVAR(getrate_doc,
+"get_rate() -> long\n\
+\n\
+Returns the sample rate of the PCM object.");
 
 
 static PyObject *
@@ -862,6 +902,9 @@ static PyMethodDef alsapcm_methods[] = {
     {"pcmtype", (PyCFunction)alsapcm_pcmtype, METH_VARARGS, pcmtype_doc},
     {"pcmmode", (PyCFunction)alsapcm_pcmmode, METH_VARARGS, pcmmode_doc},
     {"cardname", (PyCFunction)alsapcm_cardname, METH_VARARGS, cardname_doc},
+    {"get_rate", (PyCFunction)alsapcm_getrate, METH_VARARGS, getrate_doc},
+    {"get_channels", (PyCFunction)alsapcm_getchannels, METH_VARARGS,
+     getchannels_doc},
     {"setchannels", (PyCFunction)alsapcm_setchannels, METH_VARARGS, 
      setchannels_doc },
     {"setrate", (PyCFunction)alsapcm_setrate, METH_VARARGS, setrate_doc},
