@@ -111,6 +111,7 @@ char *translate_cardidx(int idx)
 static PyTypeObject ALSAPCMType;
 static PyObject *ALSAAudioError;
 
+static PyObject *
 alsapcm_list(PyObject *self, PyObject *args)
 {
 	int err;
@@ -2090,7 +2091,7 @@ static PyTypeObject ALSAMixerType = {
 /******************************************/
 
 static PyMethodDef alsaaudio_methods[] = {
-+	{ "pcms", alsapcm_list, METH_VARARGS, pcms_doc},
+	{ "pcms", alsapcm_list, METH_VARARGS, pcms_doc},
     { "cards", alsacard_list, METH_VARARGS, cards_doc},
     { "mixers", alsamixer_list, METH_VARARGS, mixers_doc},
     { 0, 0 },
