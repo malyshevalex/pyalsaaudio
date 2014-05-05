@@ -111,6 +111,46 @@ char *translate_cardidx(int idx)
 static PyTypeObject ALSAPCMType;
 static PyObject *ALSAAudioError;
 
+alsapcm_list(PyObject *self, PyObject *args)
+{
+	int err;
+	int cardidx = -1;
+	char **hints;
+	PyObject *result = NULL;
+
+    if (!PyArg_ParseTuple(args,"|i:pcms",&cardidx)) 
+        return NULL;
+
+	// For all the devices find name hints
+	if ((err = snd_device_name_hint(cardidx, "pcm", (void***)&hints)) < 0) {
+		PyErr_SetString(ALSAAudioError,snd_strerror(err));
+		return NULL;
+	}
+
+	result = PyList_New(0);
+
+	char** n = hints;
+	while (*n != NULL) {
+		char *name = snd_device_name_get_hint(*n, "NAME");
+
+		if (name != NULL && 0 != strcmp("null", name)) {
+			PyList_Append(result, PyUnicode_FromString(name)); 
+			free(name);
+		}
+		n++;
+	}
+
+	snd_device_name_free_hint((void**)hints);
+
+	return result;
+}
+
+PyDoc_STRVAR(pcms_doc,
+"pcms([card_index]) -> list\n\
+\n\
+Return list all PCMs.  Optionally specify card_index to return list of PCM's\n\
+on specified card.");
+
 static PyObject *
 alsacard_list(PyObject *self, PyObject *args) 
 {
@@ -2050,6 +2090,7 @@ static PyTypeObject ALSAMixerType = {
 /******************************************/
 
 static PyMethodDef alsaaudio_methods[] = {
++	{ "pcms", alsapcm_list, METH_VARARGS, pcms_doc},
     { "cards", alsacard_list, METH_VARARGS, cards_doc},
     { "mixers", alsamixer_list, METH_VARARGS, mixers_doc},
     { 0, 0 },
