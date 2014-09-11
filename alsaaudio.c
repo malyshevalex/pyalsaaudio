@@ -206,6 +206,57 @@ PyDoc_STRVAR(cards_doc,
 \n\
 List the available card ids.");
 
+static PyObject *
+alsadevices_list(PyObject *self, PyObject *args) 
+{
+    char *card_id = NULL;
+    char name[32];
+    int dev, err;
+    PyObject *result = NULL;
+    snd_ctl_t *handle;
+    snd_pcm_info_t *pcminfo;
+
+    if (!PyArg_ParseTuple(args,"s:devices", &card_id)) 
+        return NULL;
+
+    sprintf(name, "hw:%s", card_id);
+    if ((err = snd_ctl_open(&handle, name, 0)) < 0) {
+        PyErr_SetString(ALSAAudioError, snd_strerror(err));
+        return NULL;
+    }
+
+    snd_pcm_info_alloca(&pcminfo);
+    result = PySet_New(0);
+
+    dev = -1;
+    while (1) {
+        PyObject *item;
+        if ((err = snd_ctl_pcm_next_device(handle, &dev)) < 0)
+            PyErr_SetString(ALSAAudioError, snd_strerror(err));
+        if (dev < 0)
+            break;
+        snd_pcm_info_set_device(pcminfo, dev);
+        snd_pcm_info_set_subdevice(pcminfo, 0);
+        snd_pcm_info_set_stream(pcminfo, SND_PCM_STREAM_PLAYBACK);
+        if ((err = snd_ctl_pcm_info(handle, pcminfo)) < 0) {
+            if (err != -ENOENT)
+                continue;
+        }
+        item = PyUnicode_FromString(snd_pcm_info_get_id(pcminfo));
+        PySet_Add(result, item);
+        Py_DECREF(item);
+    }
+    snd_ctl_close(handle);
+    return result;  
+}
+
+PyDoc_STRVAR(devices_doc,
+"devices(card_id)\n\
+\n\
+List the available devices for card.");
+
+
+
 static int alsapcm_setup(alsapcm_t *self) 
 {
     int res,dir;
@@ -2136,6 +2187,7 @@ static PyTypeObject ALSAMixerType = {
 static PyMethodDef alsaaudio_methods[] = {
 	{ "pcms", alsapcm_list, METH_VARARGS, pcms_doc},
     { "cards", alsacard_list, METH_VARARGS, cards_doc},
+    { "devices", alsadevices_list, METH_VARARGS, devices_doc},
     { "mixers", alsamixer_list, METH_VARARGS, mixers_doc},
     { 0, 0 },
 };
